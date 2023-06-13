@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	requestURL  = "speed.cloudflare.com/cdn-cgi/trace" // 请求trace URL
 	timeout     = 1 * time.Second                      // 超时时间
 	maxDuration = 2 * time.Second                      // 最大持续时间
 )
@@ -35,6 +34,7 @@ var (
 	speedTest    = flag.Int("speedtest", 5, "下载测速协程数量,设为0禁用测速")                                // 下载测速协程数量
 	speedTestURL = flag.String("url", "speed.cloudflare.com/__down?bytes=500000000", "测速文件地址") // 测速文件地址
 	enableTLS    = flag.Bool("tls", true, "是否启用TLS")                                           // TLS是否启用
+	request      = flag.String("request", "speed.cloudflare.com/cdn-cgi/trace", "请求trace URL") // 请求trace URL
 )
 
 type result struct {
@@ -202,7 +202,7 @@ func main() {
 			} else {
 				protocol = "http://"
 			}
-			requestURL := protocol + requestURL
+			requestURL := protocol + *request
 
 			req, _ := http.NewRequest("GET", requestURL, nil)
 
