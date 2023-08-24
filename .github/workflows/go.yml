@@ -17,13 +17,13 @@ jobs:
         go-version: '1.20.4'
 
     - name: Build for amd64
-      run: GOOS=linux GOARCH=amd64 go build -o app-amd64 main.go
+      run: env GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -o app-amd64 -trimpath -ldflags "-s -w -buildid=" ./
 
     - name: Build for arm64
-      run: GOOS=linux GOARCH=arm64 go build -o app-arm64 main.go
+      run: env GOOS=linux GOARCH=arm64 CGO_ENABLED=0  go build -o app-arm64 -trimpath -ldflags "-s -w -buildid=" ./
 
     - name: Build for windows64
-      run: GOOS=windows GOARCH=amd64 go build -o app-windows64.exe main.go
+      run: env GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -o app-windows64 -trimpath -ldflags "-s -w -buildid=" ./
     - name: Run UPX
       uses: crazy-max/ghaction-upx@v2
       with:
