@@ -20,7 +20,7 @@ jobs:
       run: GOOS=linux GOARCH=amd64 go build -o app-amd64 main.go
 
     - name: Build for arm64
-      run: GOOS=android GOARCH=arm64 go build -o app-arm64 main.go
+      run: GOOS=linux GOARCH=arm64 go build -o app-arm64 main.go
 
     - name: Build for windows64
       run: GOOS=windows GOARCH=amd64 go build -o app-windows64.exe main.go
