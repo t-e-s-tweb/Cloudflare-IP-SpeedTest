@@ -24,46 +24,17 @@ jobs:
 
     - name: Build for windows64
       run: GOOS=windows GOARCH=amd64 go build -o app-windows64.exe main.go
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Run UPX
+      uses: crazy-max/ghaction-upx@v2
       with:
-          tag_name: v1.0.0
-          release_name: Release v1.0.0
-          body: |
-            Description of the release
-          draft: false
-          prerelease: false
-
-    - name: Upload amd64 binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          files: |
+            ./app-*
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app-amd64
-        asset_name: app-amd64
-        asset_content_type: application/octet-stream
-
-    - name: Upload arm64 binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app-arm64
-        asset_name: app-arm64
-        asset_content_type: application/octet-stream
-
-    - name: Upload windows64 binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app-windows64.exe
-        asset_name: app-windows64.exe
-        asset_content_type: application/octet-stream
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./app-*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
