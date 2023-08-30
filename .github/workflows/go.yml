@@ -24,12 +24,12 @@ jobs:
 
     - name: Build for windows64
       run: env GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -o app-windows64 -trimpath -ldflags "-s -w -buildid=" ./main.go
-    - name: Run UPX
-      uses: crazy-max/ghaction-upx@v2
-      with:
-          version: latest
-          files: |
-            ./app-*
+  #  - name: Run UPX
+  #    uses: crazy-max/ghaction-upx@v2
+  #    with:
+  #        version: latest
+  #        files: |
+  #          ./app-*
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
