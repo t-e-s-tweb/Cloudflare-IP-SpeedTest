@@ -22,23 +22,24 @@ import (
 )
 
 const (
-	timeout     = 1 * time.Second // 超时时间
-	maxDuration = 2 * time.Second // 最大持续时间
+	timeout     = 500 * time.Millisecond // 超时时间
+	maxDuration = 1500 * time.Millisecond // 最大持续时间
 )
 
 var (
 	File         = flag.String("file", "ip.txt", "IP地址文件名称,格式为 ip port ,就是IP和端口之间用空格隔开")  // IP地址文件名称
 	outFile      = flag.String("outfile", "ip.csv", "输出文件名称")                             // 输出文件名称
-	maxThreads   = flag.Int("max", 200, "并发请求最大协程数")                                      // 最大协程数
-	speedTest    = flag.Int("speedtest", 10, "下载测速协程数量,设为0禁用测速")                          // 下载测速协程数量
+	maxThreads   = flag.Int("max", 20, "并发请求最大协程数")                                      // 最大协程数
+	speedTest    = flag.Int("speedtest", 0, "下载测速协程数量,设为0禁用测速")                          // 下载测速协程数量
 	speedTestURL = flag.String("url", "speed.bestip.one/__down?bytes=50000000", "测速文件地址") // 测速文件地址
-	enableTLS    = flag.Bool("tls", false, "是否启用TLS")                                     // TLS是否启用
-	TCPurl       = flag.String("tcpurl", "speed.bestip.one", "TCP请求地址")                   // TCP请求地址
+	enableTLS    = flag.Bool("tls", false, "是否启用TLS")                                      // TLS是否启用
+	TCPurl       = flag.String("tcpurl", "www.speedtest.net", "TCP请求地址")                  // TCP请求地址
 )
 
 type result struct {
-	ip          string        // IP地址
-	port        int           // 端口
+	ip   string // IP地址
+	port int    // 端口
+	// host        string        // 主机名
 	dataCenter  string        // 数据中心
 	region      string        // 地区
 	city        string        // 城市
@@ -149,6 +150,7 @@ func main() {
 		}
 	} else {
 		fmt.Println("本地 locations.json 已存在,无需重新下载")
+		fmt.Printf("information:\ntcpurl:%s\noutfile:%s\nfile:%s\n", *TCPurl, *outFile, *File)
 		file, err := os.Open("locations.json")
 		if err != nil {
 			fmt.Printf("无法打开文件: %v\n", err)
@@ -262,7 +264,7 @@ func main() {
 			req, _ := http.NewRequest("GET", requestURL, nil)
 
 			// 添加用户代理
-			req.Header.Set("User-Agent", "Mozilla/5.0")
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
 			req.Close = true
 			// 使用context设置超时时间
 			ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
@@ -297,7 +299,7 @@ func main() {
 			}()
 			select {
 			case body := <-bodyCh:
-				if strings.Contains(string(body), "uag=Mozilla/5.0") {
+				if strings.Contains(string(body), "uag=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36") {
 					if matches := regexp.MustCompile(`colo=([A-Z]+)`).FindStringSubmatch(string(body)); len(matches) > 1 {
 						dataCenter := matches[1]
 						loc, ok := locationMap[dataCenter]
@@ -395,7 +397,8 @@ func main() {
 	}
 	for _, res := range results {
 		if *speedTest > 0 {
-			writer.Write([]string{res.result.ip, strconv.Itoa(res.result.port), strconv.FormatBool(*enableTLS), res.result.dataCenter, res.result.region, res.result.city, res.result.latency, fmt.Sprintf("%.0f kB/s", res.downloadSpeed)})
+			downloadSpeedMBps := res.downloadSpeed / 1024 // 将下载速度从kB/s转换为MB/s
+			writer.Write([]string{res.result.ip, strconv.Itoa(res.result.port), strconv.FormatBool(*enableTLS), res.result.dataCenter, res.result.region, res.result.city, res.result.latency, fmt.Sprintf("%.2f MB/s", downloadSpeedMBps)})
 		} else {
 			writer.Write([]string{res.result.ip, strconv.Itoa(res.result.port), strconv.FormatBool(*enableTLS), res.result.dataCenter, res.result.region, res.result.city, res.result.latency})
 		}
