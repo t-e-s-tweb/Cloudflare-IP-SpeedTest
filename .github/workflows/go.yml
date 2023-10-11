@@ -18,7 +18,6 @@ jobs:
       uses: actions/setup-go@v4.1.0
       with:
         go-version: '1.21.1'
-        cache-dependency-path: "**/*.sum"
       
     - uses: actions/cache@v3
       with:
