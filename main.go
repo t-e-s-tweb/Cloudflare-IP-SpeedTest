@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	timeout     = 500 * time.Millisecond // 超时时间
-	maxDuration = 1500 * time.Millisecond // 最大持续时间
+	timeout     = 1000 * time.Millisecond // 超时时间
+	maxDuration = 2500 * time.Millisecond // 最大持续时间
 )
 
 var (
