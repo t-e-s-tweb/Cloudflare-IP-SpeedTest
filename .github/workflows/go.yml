@@ -21,9 +21,9 @@ jobs:
         cache: true
       
     - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2
+      uses: korandoru/setup-zig@v1
       with:
-       version: 0.11.0
+       zig-version: master
     - name: Build for arm64
       run: env CGO_ENABLED="0" GOOS=linux GOARCH=arm64 CC="zig cc -target aarch64-linux-musl" CXX="zig c++ -target aarch64-linux-musl" go build -o app-arm64 -trimpath -ldflags "-s -w -buildid=" ./main.go
 
