@@ -503,7 +503,7 @@ func getDownloadSpeed(ip string, port int) float64 {
 
 // 获取客户端 IP 地址
 func getClientIP() (string, error) {
-	resp, err := http.Get("https://cf-ns.com/cdn-cgi/trace")
+	resp, err := http.Get("https://sparrow.cloudflare.com/cdn-cgi/trace")
 	if err != nil {
 		return "", fmt.Errorf("无法获取客户端IP: %v", err)
 	}
