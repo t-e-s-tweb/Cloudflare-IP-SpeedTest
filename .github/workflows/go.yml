@@ -1,47 +1,67 @@
-name: Build and Release
+name: build
 
 on:
-  workflow_dispatch:
+  release:
+    types: [created] # 表示在创建新的 Release 时触发
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  build:
+  build-go-binary:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin] # 需要打包的系统
+        goarch: [amd64, arm64, arm, mips, mips64, mips64le, mipsle, 386] # 需要打包的架构
+        exclude: # 排除某些平台和架构
+          - goarch: arm64
+            goos: windows
+          - goarch: 386
+            goos: darwin
+          # arm 排除
+          - goarch: arm
+            goos: windows
+          - goarch: arm
+            goos: darwin
+
+          # windows、darwin、android 排除 mips, mips64, mips64le, mipsle
+          - goarch: mips
+            goos: windows
+          - goarch: mips64
+            goos: windows
+          - goarch: mips64le
+            goos: windows
+          - goarch: mipsle
+            goos: windows
+
+          - goarch: mips
+            goos: darwin
+          - goarch: mips64
+            goos: darwin
+          - goarch: mips64le
+            goos: darwin
+          - goarch: mipsle
+            goos: darwin
+
+          - goarch: mips
+            goos: android
+          - goarch: mips64
+            goos: android
+          - goarch: mips64le
+            goos: android
+          - goarch: mipsle
+            goos: android
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4.1.0
-      with:
-       repository: 'sinspired/CloudflareBestIP'
-       ref: 'main'
-      
-    - name: Set up Go
-      uses: actions/setup-go@v4.1.0
-      with:
-        go-version: '1.22'
-        cache: true
-      
-    - name: Setup Zig
-      uses: korandoru/setup-zig@v1
-      with:
-       zig-version: master
-    - name: Build for arm64
-      run: env CGO_ENABLED="0" GOOS=linux GOARCH=arm64 CC="zig cc -target aarch64-linux-musl" CXX="zig c++ -target aarch64-linux-musl" go build -o app-arm64 -trimpath -ldflags "-s -w -buildid=" ./main.go ./update.go
-
-
-
-   # - name: Build for windows64
-   #   run: env GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -o app-windows64 -trimpath -ldflags "-s -w -buildid=" ./main.go
-  #  - name: Run UPX
-  #    uses: crazy-max/ghaction-upx@v2
-  #    with:
-  #        version: latest
-  #        files: |
-  #          ./app-*
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./app-*
-        tag: ${{ github.ref }}
-        overwrite: true
-        file_glob: true
+      - uses: actions/checkout@v3
+      - uses: wangyoucao577/go-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # 一个默认的变量，用来实现往 Release 中添加文件
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: 1.21 # 可以指定编译使用的 Golang 版本
+          binary_name: "cfiptest" # 可以指定二进制文件的名称
+          ldflags: -s -w -X "main.version=${{ github.ref_name }}"
+          md5sum: false
