@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        goos: [android]
+        goarch: [arm64]
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      CGO_ENABLED: 0
+      BUILDHASH: ${{ github.sha }}
+
+    steps:
+      - name: Set BUILDDATE and BUILDTAG
+        run: |
+          echo "BUILDDATE=$(date -u +'%Y-%m-%d %H:%M:%S +0000')" >> $GITHUB_ENV
+          echo "BUILDTAG=release, by zhfreal" >> $GITHUB_ENV
+
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+        with:
+          repository: zhfreal/cftestor
+          ref: dev
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Get project dependencies
+        run: go mod download
+
+      - name: Prepare for Build
+        run: |
+          echo "BINARY=cftestor-${GOOS}-${GOARCH}" >> $GITHUB_ENV
+
+      - name: Show workflow information
+        run: |
+          echo "GOOS: ${GOOS}, GOARCH: ${GOARCH}, RELEASE_VERSION: ${RELEASE_VERSION}, RELEASE_NAME: ${BINARY}"
+
+      - name: Build
+        run: |
+          mkdir -p dist
+          LDFLAGS="-s -w -buildid= \
+                   -X 'main.version=${RELEASE_VERSION}' \
+                   -X 'main.buildDate=${BUILDDATE}' \
+                   -X 'main.buildTag=${BUILDTAG}' \
+                   -X 'main.buildHash=${BUILDHASH}'"
+          go build -o dist/${BINARY} -v -trimpath -ldflags "${LDFLAGS}" .
+
+      - name: Create ZIP archive
+        run: |
+          cd dist
+          PREFIX=${BINARY}
+          zip -9vr ${PREFIX}.zip ${BINARY}
+          rm ${BINARY}
+          DGST=${PREFIX}.dgst
+          for t in md5 sha1 sha256 sha512; do
+            openssl dgst -${t} ${PREFIX}.zip | sed 's/([^)]*)= \+/\t/' >> ${PREFIX}.zip.dgst
+          done
+          cd ..
+
+      - name: Upload files to GitHub release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          overwrite: true
+          file: ./dist/cftestor-*
+          tag: ${{ github.ref }}
